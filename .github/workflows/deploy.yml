@@ -1,22 +1,11 @@
 name: Databricks Pipeline CI/CD
 
 on:
-  # PR checks only run bundle validation - nothing is deployed
   pull_request:
     branches:
       - main
-
-  # Manual deployment via the GitHub Actions UI
+  # Adds a manual "Run workflow" button in GitHub Actions
   workflow_dispatch:
-    inputs:
-      target_env:
-        description: "Choose deployment target"
-        required: true
-        default: "dev"
-        type: choice
-        options:
-          - dev
-          - prod
 
 jobs:
   validate:
@@ -27,7 +16,7 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Setup Databricks CLI
-        uses: databricks/setup-cli@main
+        uses: databricks/setup-cli@v0.229.0
 
       - name: Validate Dev Bundle
         run: databricks bundle validate -t dev
@@ -35,18 +24,19 @@ jobs:
           DATABRICKS_HOST: ${{ secrets.DATABRICKS_HOST }}
           DATABRICKS_TOKEN: ${{ secrets.DATABRICKS_TOKEN }}
 
-  deploy:
-    name: Manual Deploy
+  deploy-prod:
+    name: Deploy to Production (Manual)
     runs-on: ubuntu-latest
+    # Only runs when manually triggered via workflow_dispatch
     if: github.event_name == 'workflow_dispatch'
     steps:
       - uses: actions/checkout@v4
 
       - name: Setup Databricks CLI
-        uses: databricks/setup-cli@main
+        uses: databricks/setup-cli@v0.229.0
 
-      - name: Deploy Selected Environment
-        run: databricks bundle deploy -t ${{ github.event.inputs.target_env }}
+      - name: Deploy Bundle to Prod
+        run: databricks bundle deploy -t prod
         env:
           DATABRICKS_HOST: ${{ secrets.DATABRICKS_HOST }}
           DATABRICKS_TOKEN: ${{ secrets.DATABRICKS_TOKEN }}
