@@ -1,0 +1,84 @@
+resources:
+  jobs:
+    Open_Data_Portal_Pipeline:
+      name: "[${bundle.target}] Open Data Portal Pipeline"
+      schedule:
+        quartz_cron_expression: 57 0 8 * * ?
+        timezone_id: America/New_York
+        pause_status: UNPAUSED
+      tasks:
+        - task_key: Discover_Catalog
+          notebook_task:
+            notebook_path: ../src/socrata_discovery.ipynb
+            base_parameters:
+              socrata_domain: opendata.maryland.gov
+              catalog_name: open_data_portal
+              schema_name: meta
+              limit: ""
+              force_refresh: "false"
+              table_name: _socrata_ingestion_queue
+          environment_key: python_sodapy
+
+        - task_key: read_queue_batch_1
+          depends_on:
+            - task_key: Discover_Catalog
+          sql_task:
+            query:
+              query_id: 96a901c7-f466-440c-a23e-1451c1a7405b
+            warehouse_id: 89ddf1e3bf0a127c
+
+        - task_key: Ingest_Tables_batch_1
+          depends_on:
+            - task_key: read_queue_batch_1
+          for_each_task:
+            inputs: "{{tasks.read_queue_batch_1.output.rows}}"
+            concurrency: 8
+            task:
+              task_key: Ingest_Tables_iteration_batch_1
+              notebook_task:
+                notebook_path: ../src/socrata_ingest_single_table.ipynb
+                base_parameters:
+                  socrata_domain: opendata.maryland.gov
+                  dataset_id: "{{input.dataset_id}}"
+                  catalog_name: open_data_portal
+                  schema_name: bronze
+                  meta_schema: meta
+                  verbose: "false"
+              environment_key: python_sodapy
+
+        - task_key: read_queue_batch_2
+          depends_on:
+            - task_key: Ingest_Tables_batch_1
+          sql_task:
+            query:
+              query_id: 96a901c7-f466-440c-a23e-1451c1a7405b
+            warehouse_id: 89ddf1e3bf0a127c
+
+        - task_key: Ingest_Tables_batch_2
+          depends_on:
+            - task_key: read_queue_batch_2
+          for_each_task:
+            inputs: "{{tasks.read_queue_batch_2.output.rows}}"
+            concurrency: 8
+            task:
+              task_key: Ingest_Tables_iteration_batch_2
+              notebook_task:
+                notebook_path: ../src/socrata_ingest_single_table.ipynb
+                base_parameters:
+                  socrata_domain: opendata.maryland.gov
+                  dataset_id: "{{input.dataset_id}}"
+                  catalog_name: open_data_portal
+                  schema_name: bronze
+                  meta_schema: meta
+                  verbose: "false"
+              environment_key: python_sodapy
+
+      queue:
+        enabled: true
+      environments:
+        - environment_key: python_sodapy
+          spec:
+            dependencies:
+              - sodapy
+            environment_version: "6"
+      performance_target: PERFORMANCE_OPTIMIZED
