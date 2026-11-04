@@ -53,5 +53,6 @@ resources:
           spec:
             dependencies:
               - sodapy
+              - tenacity
             environment_version: "6"
       performance_target: PERFORMANCE_OPTIMIZED
