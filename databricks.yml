@@ -8,6 +8,12 @@ variables:
   catalog_name:
     description: "Target Unity Catalog name for datasets and control metadata"
     default: open_data_portal_dev
+  meta_schema:
+    description: "Control/Audit schema"
+    default: meta
+  warehouse_id:
+    description: "SQL warehouse ID for queue task"
+    default: "a3867ded238b86ae"
 
 targets:
   dev:
@@ -21,15 +27,19 @@ targets:
         group_name: datahub-admins
     variables:
       catalog_name: open_data_portal_dev
+      meta_schema: meta
+      warehouse_id: "a3867ded238b86ae"
 
   prod:
-      mode: production
-      workspace:
-        host: https://dbc-4ec94b0b-c1b3.cloud.databricks.com
-        profile: prod
-        root_path: /Shared/.bundle/${bundle.name}/${bundle.target}
-      permissions:
-        - level: CAN_MANAGE
-          group_name: datahub-admins
-      variables:
-        catalog_name: open_data_portal
+    mode: production
+    workspace:
+      host: https://dbc-4ec94b0b-c1b3.cloud.databricks.com
+      profile: prod
+      root_path: /Shared/.bundle/${bundle.name}/${bundle.target}
+    permissions:
+      - level: CAN_MANAGE
+        group_name: datahub-admins
+    variables:
+      catalog_name: open_data_portal
+      meta_schema: meta
+      warehouse_id: "8ff98f058c7e2839"

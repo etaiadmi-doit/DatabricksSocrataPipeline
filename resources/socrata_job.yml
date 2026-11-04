@@ -23,9 +23,9 @@ resources:
           depends_on:
             - task_key: Discover_Catalog
           sql_task:
-            query:
-              query_id: 96a901c7-f466-440c-a23e-1451c1a7405b
-            warehouse_id: 89ddf1e3bf0a127c
+            warehouse_id: ${var.warehouse_id}
+            file:
+              path: ../src/read_queue.sql
 
         - task_key: Ingest_Tables_batch_1
           depends_on:
