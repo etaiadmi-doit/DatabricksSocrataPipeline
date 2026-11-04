@@ -43,7 +43,7 @@ resources:
                   catalog_name: ${var.catalog_name}   
                   schema_name: bronze
                   meta_schema: meta
-                  verbose: "false"
+                  verbose: "true"
               environment_key: python_sodapy
 
       queue:
