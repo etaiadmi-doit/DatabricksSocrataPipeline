@@ -12,7 +12,7 @@ resources:
             notebook_path: ../src/socrata_discovery.ipynb
             base_parameters:
               socrata_domain: opendata.maryland.gov
-              catalog_name: open_data_portal
+              catalog_name: ${var.catalog_name}   
               schema_name: meta
               limit: ""
               force_refresh: "false"
@@ -40,13 +40,11 @@ resources:
                 base_parameters:
                   socrata_domain: opendata.maryland.gov
                   dataset_id: "{{input.dataset_id}}"
-                  catalog_name: open_data_portal
+                  catalog_name: ${var.catalog_name}   
                   schema_name: bronze
                   meta_schema: meta
                   verbose: "false"
               environment_key: python_sodapy
-
-
 
       queue:
         enabled: true
