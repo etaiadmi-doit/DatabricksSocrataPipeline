@@ -18,23 +18,26 @@ resources:
               force_refresh: "false"
               table_name: _socrata_ingestion_queue
           environment_key: python_sodapy
-
-        - task_key: read_queue_batch_1
+          
+        - task_key: read_queue
           depends_on:
             - task_key: Discover_Catalog
           sql_task:
             warehouse_id: ${var.warehouse_id}
             file:
               path: ../src/read_queue.sql
+            parameters:
+              catalog_name: ${var.catalog_name}
+              meta_schema: ${var.meta_schema}
 
-        - task_key: Ingest_Tables_batch_1
+        - task_key: Ingest_Tables
           depends_on:
-            - task_key: read_queue_batch_1
+            - task_key: read_queue
           for_each_task:
-            inputs: "{{tasks.read_queue_batch_1.output.rows}}"
+            inputs: "{{tasks.read_queue.output.rows}}"
             concurrency: 8
             task:
-              task_key: Ingest_Tables_iteration_batch_1
+              task_key: Ingest_Tables_iteration
               notebook_task:
                 notebook_path: ../src/socrata_ingest_single_table.ipynb
                 base_parameters:

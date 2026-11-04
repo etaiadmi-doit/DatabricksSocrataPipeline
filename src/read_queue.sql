@@ -8,7 +8,7 @@ WITH latest_status AS (
             PARTITION BY dataset_id 
             ORDER BY logged_at DESC
         ) AS rn
-    FROM ${var.catalog_name}.${var.meta_schema}._socrata_ingestion_queue
+    FROM IDENTIFIER(:catalog_name || '.' || :meta_schema || '._socrata_ingestion_queue')
 )
 SELECT 
     dataset_id,
