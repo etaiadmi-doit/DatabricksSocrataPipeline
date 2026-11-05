@@ -7,34 +7,37 @@ resources:
         timezone_id: America/New_York
         pause_status: UNPAUSED
       tasks:
+        # Step 1: Discover changes upstream from Socrata portal
         - task_key: Discover_Catalog
           notebook_task:
             notebook_path: ../src/socrata_discovery.ipynb
             base_parameters:
               socrata_domain: opendata.maryland.gov
-              catalog_name: ${var.catalog_name}   
+              catalog_name: ${var.catalog_name}
               schema_name: meta
               limit: ""
               force_refresh: "false"
               table_name: _socrata_ingestion_queue
           environment_key: python_sodapy
-          
-        - task_key: read_queue
+
+        # Step 2A: Query queued DATA jobs
+        - task_key: read_data_queue
           depends_on:
             - task_key: Discover_Catalog
           sql_task:
             warehouse_id: ${var.warehouse_id}
             file:
-              path: ../src/read_queue.sql
+              path: ../src/read_data_queue.sql
             parameters:
               catalog_name: ${var.catalog_name}
               meta_schema: ${var.meta_schema}
 
+        # Step 2B: Ingest Data into Bronze Delta Tables
         - task_key: Ingest_Tables
           depends_on:
-            - task_key: read_queue
+            - task_key: read_data_queue
           for_each_task:
-            inputs: "{{tasks.read_queue.output.rows}}"
+            inputs: "{{tasks.read_data_queue.output.rows}}"
             concurrency: 8
             task:
               task_key: Ingest_Tables_iteration
@@ -43,10 +46,47 @@ resources:
                 base_parameters:
                   socrata_domain: opendata.maryland.gov
                   dataset_id: "{{input.dataset_id}}"
-                  catalog_name: ${var.catalog_name}   
+                  table_name: "{{input.table_name}}"
+                  portal_data_updated_at: "{{input.portal_data_updated_at}}"
+                  portal_metadata_updated_at: "{{input.portal_metadata_updated_at}}"
+                  catalog_name: ${var.catalog_name}
                   schema_name: bronze
                   meta_schema: meta
                   verbose: "true"
+              environment_key: python_sodapy
+
+        # Step 3A: Query queued METADATA jobs
+        - task_key: read_metadata_queue
+          depends_on:
+            - task_key: Ingest_Tables
+          sql_task:
+            warehouse_id: ${var.warehouse_id}
+            file:
+              path: ../src/read_metadata_queue.sql
+            parameters:
+              catalog_name: ${var.catalog_name}
+              meta_schema: ${var.meta_schema}
+
+        # Step 3B: Apply table comments, TBLPROPERTIES, tags & column descriptions
+        - task_key: Apply_Metadata
+          depends_on:
+            - task_key: read_metadata_queue
+          for_each_task:
+            inputs: "{{tasks.read_metadata_queue.output.rows}}"
+            concurrency: 8
+            task:
+              task_key: Apply_Metadata_iteration
+              notebook_task:
+                notebook_path: ../src/socrata_apply_metadata.ipynb
+                base_parameters:
+                  domain: opendata.maryland.gov
+                  socrata_dataset_id: "{{input.dataset_id}}"
+                  target_table: "{{input.table_name}}"
+                  portal_data_updated_at: "{{input.portal_data_updated_at}}"
+                  portal_metadata_updated_at: "{{input.portal_metadata_updated_at}}"
+                  catalog_name: ${var.catalog_name}
+                  schema_name: bronze
+                  meta_schema: meta
               environment_key: python_sodapy
 
       queue:
