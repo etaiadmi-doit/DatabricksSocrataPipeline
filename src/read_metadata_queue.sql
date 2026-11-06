@@ -22,4 +22,4 @@ WHERE rn = 1
   AND status = 'QUEUED'
   AND table_name IS NOT NULL
 ORDER BY logged_at ASC
-LIMIT 100;
+LIMIT 1000;

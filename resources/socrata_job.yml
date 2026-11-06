@@ -20,44 +20,44 @@ resources:
               table_name: _socrata_ingestion_queue
           environment_key: python_sodapy
 
-        # # Step 2A: Query queued DATA jobs
-        # - task_key: read_data_queue
-        #   depends_on:
-        #     - task_key: Discover_Catalog
-        #   sql_task:
-        #     warehouse_id: ${var.warehouse_id}
-        #     file:
-        #       path: ../src/read_data_queue.sql
-        #     parameters:
-        #       catalog_name: ${var.catalog_name}
-        #       meta_schema: ${var.meta_schema}
+        # Step 2A: Query queued DATA jobs
+        - task_key: read_data_queue
+          depends_on:
+            - task_key: Discover_Catalog
+          sql_task:
+            warehouse_id: ${var.warehouse_id}
+            file:
+              path: ../src/read_data_queue.sql
+            parameters:
+              catalog_name: ${var.catalog_name}
+              meta_schema: ${var.meta_schema}
 
-        # # Step 2B: Ingest Data into Bronze Delta Tables
-        # - task_key: Ingest_Tables
-        #   depends_on:
-        #     - task_key: read_data_queue
-        #   for_each_task:
-        #     inputs: "{{tasks.read_data_queue.output.rows}}"
-        #     concurrency: 8
-        #     task:
-        #       task_key: Ingest_Tables_iteration
-        #       notebook_task:
-        #         notebook_path: ../src/socrata_ingest_single_table.ipynb
-        #         base_parameters:
-        #           socrata_domain: opendata.maryland.gov
-        #           dataset_id: "{{input.dataset_id}}"
-        #           table_name: "{{input.table_name}}"
-        #           portal_data_updated_at: "{{input.portal_data_updated_at}}"
-        #           catalog_name: ${var.catalog_name}
-        #           schema_name: bronze
-        #           meta_schema: meta
-        #           verbose: "true"
-        #       environment_key: python_sodapy
+        # Step 2B: Ingest Data into Bronze Delta Tables
+        - task_key: Ingest_Tables
+          depends_on:
+            - task_key: read_data_queue
+          for_each_task:
+            inputs: "{{tasks.read_data_queue.output.rows}}"
+            concurrency: 8
+            task:
+              task_key: Ingest_Tables_iteration
+              notebook_task:
+                notebook_path: ../src/socrata_ingest_single_table.ipynb
+                base_parameters:
+                  socrata_domain: opendata.maryland.gov
+                  dataset_id: "{{input.dataset_id}}"
+                  table_name: "{{input.table_name}}"
+                  portal_data_updated_at: "{{input.portal_data_updated_at}}"
+                  catalog_name: ${var.catalog_name}
+                  schema_name: bronze
+                  meta_schema: meta
+                  verbose: "true"
+              environment_key: python_sodapy
 
         # Step 3A: Query queued METADATA jobs
         - task_key: read_metadata_queue
           depends_on:
-            - task_key: Discover_Catalog
+            - task_key: Ingest_Tables
           sql_task:
             warehouse_id: ${var.warehouse_id}
             file:
