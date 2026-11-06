@@ -12,7 +12,7 @@ resources:
           notebook_task:
             notebook_path: ../src/socrata_discovery.ipynb
             base_parameters:
-              socrata_domain: opendata.maryland.gov
+              domain: opendata.maryland.gov
               catalog_name: ${var.catalog_name}
               schema_name: meta
               limit: ""
@@ -45,13 +45,11 @@ resources:
                 notebook_path: ../src/socrata_ingest_single_table.ipynb
                 base_parameters:
                   socrata_domain: opendata.maryland.gov
-                  dataset_id: "{{input.dataset_id}}"
-                  table_name: "{{input.table_name}}"
-                  portal_data_updated_at: "{{input.portal_data_updated_at}}"
                   catalog_name: ${var.catalog_name}
                   schema_name: bronze
                   meta_schema: meta
                   verbose: "true"
+                  payload: "{{input.payload}}"
               environment_key: python_sodapy
 
         # Step 3A: Query queued METADATA jobs
@@ -66,7 +64,7 @@ resources:
               catalog_name: ${var.catalog_name}
               meta_schema: ${var.meta_schema}
 
-        # Step 3B: Apply table comments, TBLPROPERTIES, tags & column descriptions
+# Step 3B: Apply table comments, TBLPROPERTIES, tags & column descriptions
         - task_key: Apply_Metadata
           depends_on:
             - task_key: read_metadata_queue
@@ -79,12 +77,10 @@ resources:
                 notebook_path: ../src/socrata_apply_metadata.ipynb
                 base_parameters:
                   domain: opendata.maryland.gov
-                  socrata_dataset_id: "{{input.dataset_id}}"
-                  target_table: "{{input.table_name}}"
-                  portal_metadata_updated_at: "{{input.portal_metadata_updated_at}}"
                   catalog_name: ${var.catalog_name}
                   schema_name: bronze
                   meta_schema: meta
+                  payload: "{{input.payload}}"
               environment_key: python_sodapy
 
       queue:

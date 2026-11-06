@@ -2,9 +2,10 @@ WITH latest_status AS (
     SELECT 
         dataset_id,
         table_name,
-        task_type,
-        status,
+        title,
+        portal_data_updated_at,
         portal_metadata_updated_at,
+        status,
         logged_at,
         ROW_NUMBER() OVER (
             PARTITION BY dataset_id, task_type
@@ -14,9 +15,13 @@ WITH latest_status AS (
     WHERE task_type = 'METADATA'
 )
 SELECT 
-    dataset_id,
-    table_name,
-    COALESCE(portal_metadata_updated_at, '') AS portal_metadata_updated_at
+    to_json(named_struct(
+        'id', dataset_id,
+        'tbl', table_name,
+        'ttl', title,
+        'd_up', COALESCE(portal_data_updated_at, ''),
+        'm_up', COALESCE(portal_metadata_updated_at, '')
+    )) AS payload
 FROM latest_status
 WHERE rn = 1 
   AND status = 'QUEUED'
