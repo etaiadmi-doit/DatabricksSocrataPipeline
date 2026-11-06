@@ -5,20 +5,18 @@ WITH latest_status AS (
         task_type,
         status,
         portal_data_updated_at,
-        portal_metadata_updated_at,
         logged_at,
         ROW_NUMBER() OVER (
-            PARTITION BY dataset_id, COALESCE(task_type, 'DATA')
+            PARTITION BY dataset_id, task_type
             ORDER BY logged_at DESC
         ) AS rn
     FROM IDENTIFIER(:catalog_name || '.' || :meta_schema || '._socrata_ingestion_queue')
-    WHERE COALESCE(task_type, 'DATA') = 'DATA'
+    WHERE task_type = 'DATA'
 )
 SELECT 
     dataset_id,
     table_name,
-    COALESCE(portal_data_updated_at, '') AS portal_data_updated_at,
-    COALESCE(portal_metadata_updated_at, '') AS portal_metadata_updated_at
+    COALESCE(portal_data_updated_at, '') AS portal_data_updated_at
 FROM latest_status
 WHERE rn = 1 
   AND status = 'QUEUED'

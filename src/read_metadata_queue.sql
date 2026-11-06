@@ -4,7 +4,6 @@ WITH latest_status AS (
         table_name,
         task_type,
         status,
-        portal_data_updated_at,
         portal_metadata_updated_at,
         logged_at,
         ROW_NUMBER() OVER (
@@ -17,11 +16,10 @@ WITH latest_status AS (
 SELECT 
     dataset_id,
     table_name,
-    COALESCE(portal_data_updated_at, '') AS portal_data_updated_at,
     COALESCE(portal_metadata_updated_at, '') AS portal_metadata_updated_at
 FROM latest_status
 WHERE rn = 1 
   AND status = 'QUEUED'
   AND table_name IS NOT NULL
 ORDER BY logged_at ASC
-LIMIT 1000;
+LIMIT 100;
