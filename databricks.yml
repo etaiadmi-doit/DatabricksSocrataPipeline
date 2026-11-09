@@ -22,7 +22,7 @@ targets:
     workspace:
       host: https://dbc-a7c23b60-14fa.cloud.databricks.com/
       profile: dbc-a7c23b60-14fa
-      root_path: ~/Shared/.bundle/${bundle.name}/${bundle.target}
+      root_path: ~/Workspace/Users/etai.admi@maryland.gov/${bundle.name}/${bundle.target}
     permissions:
       - level: CAN_MANAGE
         group_name: datahub-admins
@@ -36,7 +36,7 @@ targets:
     workspace:
       host: https://dbc-4ec94b0b-c1b3.cloud.databricks.com
       profile: dbc-4ec94b0b-c1b3
-      root_path: /Shared/.bundle/${bundle.name}/${bundle.target}
+      root_path: /Workspace/Users/etai.admi@maryland.gov/${bundle.name}/${bundle.target}
     permissions:
       - level: CAN_MANAGE
         group_name: datahub-admins
