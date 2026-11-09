@@ -38,7 +38,7 @@ resources:
             - task_key: read_data_queue
           for_each_task:
             inputs: "{{tasks.read_data_queue.output.rows}}"
-            concurrency: 8
+            concurrency: 32
             task:
               task_key: Ingest_Tables_iteration
               notebook_task:
@@ -70,7 +70,7 @@ resources:
             - task_key: read_metadata_queue
           for_each_task:
             inputs: "{{tasks.read_metadata_queue.output.rows}}"
-            concurrency: 8
+            concurrency: 32
             task:
               task_key: Apply_Metadata_iteration
               notebook_task:

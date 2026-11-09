@@ -1,9 +1,6 @@
 WITH latest_status AS (
     SELECT 
         dataset_id,
-        table_name,
-        title,
-        portal_data_updated_at,
         portal_metadata_updated_at,
         status,
         logged_at,
@@ -17,14 +14,9 @@ WITH latest_status AS (
 SELECT 
     to_json(named_struct(
         'id', dataset_id,
-        'tbl', table_name,
-        'ttl', title,
-        'd_up', COALESCE(portal_data_updated_at, ''),
-        'm_up', COALESCE(portal_metadata_updated_at, '')
+        'up', COALESCE(portal_metadata_updated_at, '')
     )) AS payload
 FROM latest_status
 WHERE rn = 1 
   AND status = 'QUEUED'
-  AND table_name IS NOT NULL
-ORDER BY logged_at ASC
-LIMIT 1000;
+ORDER BY logged_at ASC;
