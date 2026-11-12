@@ -19,4 +19,12 @@ SELECT
 FROM latest_status
 WHERE rn = 1 
   AND status = 'QUEUED'
+  AND NOT EXISTS (
+      SELECT 1
+      FROM IDENTIFIER(:catalog_name || '.' || :meta_schema || '._socrata_ingestion_rules') r
+      WHERE r.is_active = true
+        AND UPPER(TRIM(r.action)) = 'EXCLUDE'
+        AND LOWER(TRIM(r.rule_type)) = 'dataset_id'
+        AND LOWER(TRIM(r.rule_value)) = LOWER(TRIM(dataset_id))
+  )
 ORDER BY logged_at ASC;

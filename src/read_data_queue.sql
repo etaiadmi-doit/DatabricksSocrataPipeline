@@ -1,12 +1,20 @@
-WITH latest_prior_execution AS (
+WITH latest_status AS (
     SELECT 
         dataset_id,
         status,
-        portal_data_updated_at,
-        ROW_NUMBER() OVER (PARTITION BY dataset_id, task_type ORDER BY logged_at DESC) AS row_num
+        ROW_NUMBER() OVER (PARTITION BY dataset_id ORDER BY logged_at DESC) AS rn
     FROM IDENTIFIER(:catalog_name || '.' || :meta_schema || '._socrata_ingestion_queue')
     WHERE task_type = 'DATA'
-      AND status != 'QUEUED'  -- Crucial: Ignore the newly inserted queue record
+      AND status != 'QUEUED'
+),
+latest_success AS (
+    SELECT 
+        dataset_id,
+        MAX(portal_data_updated_at) AS last_success_updated_at
+    FROM IDENTIFIER(:catalog_name || '.' || :meta_schema || '._socrata_ingestion_queue')
+    WHERE status = 'SUCCESS'
+      AND (task_type = 'DATA' OR task_type IS NULL)
+    GROUP BY dataset_id
 ),
 discovered_tasks AS (
     SELECT 
@@ -23,18 +31,24 @@ SELECT
         'up', CAST(q.portal_data_updated_at AS STRING)
     )) AS payload
 FROM discovered_tasks q
-LEFT JOIN latest_prior_execution ls 
+LEFT JOIN latest_status ls 
     ON q.dataset_id = ls.dataset_id 
-    AND ls.row_num = 1
+    AND ls.rn = 1
+LEFT JOIN latest_success lsucc
+    ON q.dataset_id = lsucc.dataset_id
 WHERE 
-    q.row_num = 1  -- Only evaluate the most recently queued task per dataset
-    -- 1. Exclude quarantined datasets
-    AND COALESCE(ls.status, '') != 'QUARANTINED'
-    -- 2. Exclude deprecated or empty datasets
-    AND COALESCE(ls.status, '') NOT IN ('DEPRECATED', 'EMPTY')
-    -- 3. Only ingest if never successfully run, or if the new queue timestamp is newer
+    q.row_num = 1
+    AND COALESCE(ls.status, '') NOT IN ('QUARANTINED', 'DEPRECATED', 'EMPTY')
+    AND NOT EXISTS (
+        SELECT 1
+        FROM IDENTIFIER(:catalog_name || '.' || :meta_schema || '._socrata_ingestion_rules') r
+        WHERE r.is_active = true
+          AND UPPER(TRIM(r.action)) = 'EXCLUDE'
+          AND LOWER(TRIM(r.rule_type)) = 'dataset_id'
+          AND LOWER(TRIM(r.rule_value)) = LOWER(TRIM(q.dataset_id))
+    )
     AND (
-        ls.portal_data_updated_at IS NULL 
-        OR q.portal_data_updated_at > ls.portal_data_updated_at
-        OR ls.status = 'FAILED'  -- Retries prior failures if not quarantined
+        lsucc.last_success_updated_at IS NULL 
+        OR q.portal_data_updated_at > lsucc.last_success_updated_at
+        OR ls.status = 'FAILED'
     );
