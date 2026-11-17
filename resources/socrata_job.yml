@@ -2,8 +2,10 @@ resources:
   jobs:
     Open_Data_Portal_Pipeline:
       name: "[${bundle.target}] Open Data Portal Pipeline"
+      tags:
+        data_origin: open_data_portal
       schedule:
-        quartz_cron_expression: 57 0 8 * * ?
+        quartz_cron_expression: 57 0 1 * * ?
         timezone_id: America/New_York
         pause_status: UNPAUSED
 
@@ -102,4 +104,4 @@ resources:
               - sodapy
               - tenacity
             environment_version: "6"
-      performance_target: PERFORMANCE_OPTIMIZED
+      performance_target: STANDARD
