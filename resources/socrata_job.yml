@@ -35,7 +35,8 @@ resources:
         # Step 2A: Query queued DATA jobs
         - task_key: read_data_queue
           depends_on:
-            - task_key: Discover_Catalog
+            - task_key: Discover_Catalog\
+          run_if: ALL_DONE
           sql_task:
             warehouse_id: ${var.warehouse_id}
             file:
@@ -48,9 +49,10 @@ resources:
         - task_key: Ingest_Tables
           depends_on:
             - task_key: read_data_queue
+          run_if: ALL_DONE
           for_each_task:
             inputs: "{{tasks.read_data_queue.output.rows}}"
-            concurrency: 8
+            concurrency: 4
             task:
               task_key: Ingest_Tables_iteration
               notebook_task:
@@ -68,6 +70,7 @@ resources:
         - task_key: read_metadata_queue
           depends_on:
             - task_key: Ingest_Tables
+          run_if: ALL_DONE
           sql_task:
             warehouse_id: ${var.warehouse_id}
             file:
@@ -82,7 +85,7 @@ resources:
             - task_key: read_metadata_queue
           for_each_task:
             inputs: "{{tasks.read_metadata_queue.output.rows}}"
-            concurrency: 8
+            concurrency: 4
             task:
               task_key: Apply_Metadata_iteration
               notebook_task:
@@ -94,6 +97,19 @@ resources:
                   meta_schema: meta
                   payload: "{{input.payload}}"
               environment_key: python_sodapy
+        
+        # Step 4: Verify no silent FAILED/QUARANTINED entries were logged during this run
+        - task_key: Check_Pipeline_Failures
+          depends_on:
+            - task_key: Apply_Metadata
+          run_if: ALL_DONE
+          notebook_task:
+            notebook_path: ../src/check_pipeline_failures.ipynb
+            base_parameters:
+              catalog_name: ${var.catalog_name}
+              meta_schema: ${var.meta_schema}
+              job_start_time: "{{job.start_time.iso_datetime}}"
+          environment_key: python_sodapy
 
       queue:
         enabled: true
