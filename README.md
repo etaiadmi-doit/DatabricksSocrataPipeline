@@ -34,6 +34,7 @@ The pipeline runs as a multi-stage workflow defined via Databricks Asset Bundles
 │   ├── socrata_apply_metadata.ipynb   # Applies column and table metadata to Delta tables
 │   ├── socrata_discovery.ipynb        # Scans Socrata endpoints and enqueues targets
 │   └── socrata_ingest_single_table.ipynb # Ingests individual Socrata tables
+│   └── check_pipeline_failures.ipynb # Emails for failure
 ├── databricks.yml                # Databricks Asset Bundle bundle configuration
 ├── pyproject.toml                # Project packaging and Python dependencies
 ├── uv.lock                       # Pinned lockfile for dependencies
