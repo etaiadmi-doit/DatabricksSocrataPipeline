@@ -35,7 +35,7 @@ resources:
         # Step 2A: Query queued DATA jobs
         - task_key: read_data_queue
           depends_on:
-            - task_key: Discover_Catalog\
+            - task_key: Discover_Catalog
           run_if: ALL_DONE
           sql_task:
             warehouse_id: ${var.warehouse_id}

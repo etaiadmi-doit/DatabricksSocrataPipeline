@@ -1,3 +1,5 @@
+SET statement_tag = 'data_origin=open_data_portal';
+
 WITH latest_status AS (
     SELECT 
         dataset_id,
