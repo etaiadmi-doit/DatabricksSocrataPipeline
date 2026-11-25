@@ -25,7 +25,7 @@ resources:
             base_parameters:
               domain: opendata.maryland.gov
               catalog_name: ${var.catalog_name}
-              schema_name: meta
+              schema_name: ${var.meta_schema}
               limit: ""
               force_refresh: "false"
               table_name: _socrata_ingestion_queue
@@ -62,7 +62,7 @@ resources:
                   domain: opendata.maryland.gov          
                   catalog_name: ${var.catalog_name}
                   schema_name: bronze
-                  meta_schema: meta
+                  meta_schema: ${var.meta_schema}
                   verbose: "true"
                   payload: "{{input.payload}}"         
               environment_key: python_sodapy
@@ -95,7 +95,7 @@ resources:
                   domain: opendata.maryland.gov
                   catalog_name: ${var.catalog_name}
                   schema_name: bronze
-                  meta_schema: meta
+                  meta_schema: ${var.meta_schema}
                   payload: "{{input.payload}}"
               environment_key: python_sodapy
         

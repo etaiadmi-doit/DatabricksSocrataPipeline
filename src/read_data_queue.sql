@@ -16,7 +16,7 @@ latest_success AS (
         dataset_id,
         MAX(portal_data_updated_at) AS last_success_updated_at
     FROM IDENTIFIER(:catalog_name || '.' || :meta_schema || '._socrata_ingestion_queue')
-    WHERE status = 'SUCCESS'
+    WHERE status IN ('SUCCESS', 'EMPTY')
       AND (task_type = 'DATA' OR task_type IS NULL)
     GROUP BY dataset_id
 ),
@@ -42,7 +42,7 @@ LEFT JOIN latest_success lsucc
     ON q.dataset_id = lsucc.dataset_id
 WHERE 
     q.row_num = 1
-    AND COALESCE(ls.status, '') NOT IN ('QUARANTINED', 'DEPRECATED', 'EMPTY')
+    AND COALESCE(ls.status, '') NOT IN ('QUARANTINED', 'DEPRECATED')
     AND NOT EXISTS (
         SELECT 1
         FROM IDENTIFIER(:catalog_name || '.' || :meta_schema || '._socrata_ingestion_rules') r
