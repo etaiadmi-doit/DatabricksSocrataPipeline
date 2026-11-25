@@ -4,6 +4,7 @@ resources:
       name: "[${bundle.target}] Open Data Portal Pipeline"
       tags:
         data_origin: open_data_portal
+        pipeline: open_data_portal
       schedule:
         quartz_cron_expression: 57 0 1 * * ?
         timezone_id: America/New_York

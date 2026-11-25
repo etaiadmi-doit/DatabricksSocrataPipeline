@@ -1,4 +1,6 @@
 SET QUERY_TAGS['data_origin'] = 'open_data_portal';
+SET QUERY_TAGS['pipeline'] = 'open_data_portal';
+
 
 WITH latest_status AS (
     SELECT 
